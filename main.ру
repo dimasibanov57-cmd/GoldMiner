@@ -1,0 +1,220 @@
+import pygame
+import random
+import json
+import time
+
+pygame.init()
+WIDTH, HEIGHT = 480, 800
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("⛏️ GOLD MINER")
+
+WHITE = (255,255,255)
+GOLD = (255,215,0)
+BLUE = (40,100,200)
+GREEN = (30,180,60)
+PURPLE = (140,40,200)
+ORANGE = (255,140,0)
+RED = (200,40,40)
+
+font_big = pygame.font.Font(None, 32)
+font_med = pygame.font.Font(None, 26)
+font_small = pygame.font.Font(None, 20)
+
+class Game:
+    def __init__(self):
+        self.gold = 100.0
+        self.money = 0.0
+        self.miners = 1
+        self.miner_level = 1
+        self.pickaxe_level = 1
+        self.prestige_level = 0
+        self.prestige_bonus = 1.0
+        self.total_earned = 0.0
+        self.running = True
+        self.message = ""
+        self.msg_timer = 0
+        self.last_tick = time.time()
+        
+        self.buttons = []
+        btns = [
+            ("💰 SELL", self.sell, GREEN),
+            ("👷 HIRE", self.hire, BLUE),
+            ("⬆ LVL UP", self.upgrade_miner, BLUE),
+            ("⛏ PICK", self.upgrade_pick, BLUE),
+            ("⭐ PREST", self.prestige, PURPLE),
+            ("💾 SAVE", self.save, ORANGE),
+            ("📂 LOAD", self.load, BLUE),
+            ("🚪 EXIT", self.exit, RED)
+        ]
+        for i, (text, action, color) in enumerate(btns):
+            x = 10 + (i % 4) * 115
+            y = 600 + (i // 4) * 58
+            self.buttons.append({
+                "text": text,
+                "rect": pygame.Rect(x, y, 105, 48),
+                "action": action,
+                "color": color
+            })
+    
+    def get_gps(self):
+        return self.miners * self.pickaxe_level * self.prestige_bonus * random.uniform(0.9, 1.1)
+    
+    def show_msg(self, text, dur=50):
+        self.message = text
+        self.msg_timer = dur
+    
+    def sell(self):
+        if self.gold >= 1:
+            price = 10 * self.prestige_bonus
+            sold = min(self.gold, 10)
+            earned = sold * price
+            self.gold -= sold
+            self.money += earned
+            self.total_earned += earned
+            self.show_msg(f"💰 +{earned:.0f}$")
+        else:
+            self.show_msg("❌ Нет золота!")
+    
+    def hire(self):
+        cost = 30 * self.miners ** 2
+        if self.money >= cost:
+            self.money -= cost
+            self.miners += 1
+            self.show_msg(f"✅ Шахтёр #{self.miners}")
+        else:
+            self.show_msg(f"❌ Нужно ${cost:.0f}")
+    
+    def upgrade_miner(self):
+        cost = 50 * self.miner_level ** 2
+        if self.money >= cost:
+            self.money -= cost
+            self.miner_level += 1
+            self.show_msg(f"✅ Lv.{self.miner_level}")
+        else:
+            self.show_msg(f"❌ Нужно ${cost:.0f}")
+    
+    def upgrade_pick(self):
+        cost = 80 * self.pickaxe_level ** 2
+        if self.money >= cost:
+            self.money -= cost
+            self.pickaxe_level += 1
+            self.show_msg(f"✅ Кирка Lv.{self.pickaxe_level}")
+        else:
+            self.show_msg(f"❌ Нужно ${cost:.0f}")
+    
+    def prestige(self):
+        if self.total_earned < 10000:
+            self.show_msg("❌ Нужно $10,000")
+            return
+        self.prestige_level += 1
+        self.prestige_bonus = 1.0 + (self.prestige_level * 0.5)
+        self.gold = 100
+        self.money = 0
+        self.miners = 1
+        self.miner_level = 1
+        self.pickaxe_level = 1
+        self.total_earned = 0
+        self.show_msg(f"✨ ПРЕСТИЖ {self.prestige_level} x{self.prestige_bonus:.1f}")
+    
+    def save(self):
+        try:
+            data = {
+                "gold": self.gold,
+                "money": self.money,
+                "miners": self.miners,
+                "miner_level": self.miner_level,
+                "pickaxe_level": self.pickaxe_level,
+                "prestige_level": self.prestige_level,
+                "prestige_bonus": self.prestige_bonus,
+                "total_earned": self.total_earned
+            }
+            with open("save.json", "w") as f:
+                json.dump(data, f)
+            self.show_msg("💾 Сохранено!")
+        except:
+            self.show_msg("❌ Ошибка сохранения")
+    
+    def load(self):
+        try:
+            with open("save.json", "r") as f:
+                data = json.load(f)
+                self.gold = data.get("gold", 100)
+                self.money = data.get("money", 0)
+                self.miners = data.get("miners", 1)
+                self.miner_level = data.get("miner_level", 1)
+                self.pickaxe_level = data.get("pickaxe_level", 1)
+                self.prestige_level = data.get("prestige_level", 0)
+                self.prestige_bonus = data.get("prestige_bonus", 1.0)
+                self.total_earned = data.get("total_earned", 0)
+            self.show_msg("📂 Загружено!")
+        except:
+            self.show_msg("❌ Нет сохранения")
+    
+    def exit(self):
+        self.save()
+        self.running = False
+    
+    def update(self):
+        now = time.time()
+        if now - self.last_tick >= 0.5:
+            self.gold += self.get_gps() * (now - self.last_tick)
+            self.last_tick = now
+        if self.msg_timer > 0:
+            self.msg_timer -= 1
+        else:
+            self.message = ""
+    
+    def draw(self):
+        screen.fill((20, 25, 45))
+        stats = [
+            f"⛏️ {self.gold:.1f} oz",
+            f"💰 ${self.money:,.0f}",
+            f"👷 {self.miners} (Lv.{self.miner_level})",
+            f"⛏ Lv.{self.pickaxe_level}",
+            f"⭐ {self.prestige_level} (x{self.prestige_bonus:.1f})",
+            f"⚡ {self.get_gps():.1f}/s"
+        ]
+        y = 15
+        for stat in stats:
+            text = font_small.render(stat, True, WHITE)
+            screen.blit(text, (15, y))
+            y += 30
+        
+        for btn in self.buttons:
+            pygame.draw.rect(screen, btn["color"], btn["rect"], border_radius=10)
+            text = font_small.render(btn["text"], True, WHITE)
+            text_rect = text.get_rect(center=btn["rect"].center)
+            screen.blit(text, text_rect)
+        
+        if self.message:
+            msg = font_med.render(self.message, True, (255,255,200))
+            rect = msg.get_rect(center=(WIDTH//2, 350))
+            pygame.draw.rect(screen, (0,0,0,200), rect.inflate(30, 15))
+            screen.blit(msg, rect)
+        
+        pygame.display.flip()
+    
+    def handle_touch(self, pos):
+        for btn in self.buttons:
+            if btn["rect"].collidepoint(pos):
+                btn["action"]()
+                return
+        self.sell()
+
+def main():
+    clock = pygame.time.Clock()
+    game = Game()
+    game.load()
+    while game.running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game.running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                game.handle_touch(event.pos)
+        game.update()
+        game.draw()
+        clock.tick(30)
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
