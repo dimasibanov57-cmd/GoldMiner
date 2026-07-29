@@ -38,12 +38,12 @@ jobs:
         echo 'requirements = python3==3.10,pygame,sdl2,sdl2_image,sdl2_mixer,sdl2_ttf' >> buildozer.spec
         echo 'orientation = portrait' >> buildozer.spec
         echo 'fullscreen = 1' >> buildozer.spec
-        echo 'android.api = 33' >> buildozer.spec
-        echo 'android.ndk = 25b' >> buildozer.spec
-        echo 'android.sdk = 33' >> buildozer.spec
+        echo 'android.api = 30' >> buildozer.spec
+        echo 'android.ndk = 23b' >> buildozer.spec
+        echo 'android.sdk = 30' >> buildozer.spec
         echo 'android.minapi = 21' >> buildozer.spec
-        echo 'android.archs = armeabi-v7a arm64-v8a' >> buildozer.spec
-        echo 'android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE' >> buildozer.spec
+        echo 'android.archs = armeabi-v7a' >> buildozer.spec
+        echo 'android.permissions = INTERNET' >> buildozer.spec
         echo 'source.dir = .' >> buildozer.spec
         echo 'source.include_exts = py,png,jpg' >> buildozer.spec
     
